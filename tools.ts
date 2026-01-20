@@ -2,6 +2,11 @@ import { z } from "zod";
 import { createSdkMcpServer, tool } from "@anthropic-ai/claude-agent-sdk";
 import { BrowserManager } from "agent-browser/dist/browser.js";
 
+// Configuration - can be set before first browser launch
+export const browserConfig = {
+  headless: process.env.BROWSER_HEADLESS !== "false", // default: true, set BROWSER_HEADLESS=false to show browser
+};
+
 // Singleton browser instance shared across all tool calls
 let browser: BrowserManager | null = null;
 
@@ -9,9 +14,7 @@ async function getBrowser(): Promise<BrowserManager> {
   if (!browser) {
     browser = new BrowserManager();
     await browser.launch({
-      id: 'default',
-      action: 'launch',
-      headless: true,
+      headless: browserConfig.headless,
       // Uncomment if you need to specify a custom Chrome/Chromium path:
       // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     });
@@ -23,9 +26,8 @@ async function getBrowser(): Promise<BrowserManager> {
 
 const browserLaunch = tool(
   "browser_launch",
-  "Launch or ensure the browser is running. Call this before other browser operations.",
+  "Launch or ensure the browser is running. Call this before other browser operations. Note: headless mode is controlled by BROWSER_HEADLESS env var or --show-browser flag.",
   {
-    headless: z.boolean().optional().describe("Run in headless mode (default: true)"),
     viewport: z.object({
       width: z.number(),
       height: z.number()
@@ -38,10 +40,10 @@ const browserLaunch = tool(
       }
       browser = new BrowserManager();
       await browser.launch({
-        headless: args.headless ?? true,
+        headless: browserConfig.headless,
         viewport: args.viewport
       });
-      return { content: [{ type: "text", text: "Browser launched successfully" }] };
+      return { content: [{ type: "text", text: `Browser launched successfully (headless: ${browserConfig.headless})` }] };
     } catch (error) {
       return {
         content: [{ type: "text", text: `Launch failed: ${(error as Error).message}` }],

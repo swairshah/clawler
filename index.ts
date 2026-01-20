@@ -1,6 +1,12 @@
 import { query, type SDKMessage, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
-import { browserToolsServer, closeBrowser } from "./tools";
+import { browserToolsServer, closeBrowser, browserConfig } from "./tools";
 import { printUsage } from "./utils";
+
+// Parse CLI arguments for --no-headless or --show-browser
+const args = process.argv.slice(2);
+if (args.includes("--no-headless") || args.includes("--show-browser")) {
+  browserConfig.headless = false;
+}
 
 async function runCrawler(prompt: string) {
   async function* messageGenerator() {
@@ -58,10 +64,15 @@ async function runCrawler(prompt: string) {
   await closeBrowser();
 }
 
-await runCrawler(`
+
+/*
   go to https://elevenlabs.io/pricing
   get all the information about different APIs, tiers, for different users.
   make sure to toggle all the buttons to extract all the information.
   create markdown tables with all that information. 
-  and write it in elevenlabs.md.
+*/
+
+await runCrawler(`
+go to https://news.ycombinator.com and create a markdown of first 10 stories.
+and write it in report.md.
 `);
